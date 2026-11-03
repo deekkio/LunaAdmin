@@ -1,0 +1,32 @@
+{
+  "name": "luna-admin-h5",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json",
+    "test": "bun test test"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@tsconfig/svelte": "^5.0.8",
+    "@types/node": "^24.19.2",
+    "sass-embedded": "^1.106.1",
+    "svelte": "^5.57.2",
+    "svelte-check": "^4.7.7",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.4"
+  },
+  "dependencies": {
+    "@lucide/svelte": "1.37.0",
+    "@luna/components": "file:../../APP/LunaUI/packages/components/dist",
+    "@luna/theme-chalk": "./vendor/theme-e4d4229a798d.tgz",
+    "date-fns": "4.4.0",
+    "echarts": "6.1.0",
+    "filesize": "11.0.29",
+    "luna-router": "../../APP/LunaRouter"
+  }
+}

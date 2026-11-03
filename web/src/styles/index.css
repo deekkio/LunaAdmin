@@ -1,0 +1,31 @@
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+/* 表单校验错误提示使用主题预设危险色（与必填星号、错误边框一致）。 */
+:root {
+  --ln-form-error: var(--ln-danger);
+}
+
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Microsoft YaHei',
+    sans-serif;
+  font-size: var(--ln-font-size-base, 14px);
+  color: var(--ln-text-1, #303133);
+  background: var(--ln-app-bg, #f5f7fa);
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono {
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  font-size: 12px;
+}
