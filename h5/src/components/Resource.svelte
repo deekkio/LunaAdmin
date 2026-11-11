@@ -8,6 +8,7 @@
     Dialog,
     Empty,
     Form,
+    Icon,
     Input,
     Pagination,
     Row,
@@ -25,6 +26,8 @@
     TableKey,
   } from '@luna/components/contracts';
   import { showToast } from '@luna/components/toast';
+  import { ActionSheet, ButtonGroup, Cell, CellGroup } from '@luna/components/h5';
+  import More from '@lucide/svelte/icons/ellipsis';
   import { api } from '../api';
   import { RequestTracker } from '../api/request';
   import type { GroupView, NodeView, Plan } from '../api/types';
@@ -56,7 +59,8 @@
   let {
     kind,
     initialId = '',
-  }: { kind: 'plans' | 'nodes'; initialId?: string } = $props();
+    mobile = false,
+  }: { kind: 'plans' | 'nodes'; initialId?: string; mobile?: boolean } = $props();
   const noun = $derived(kind === 'plans' ? '套餐' : '节点');
   const notify = (message: string, _type: 'success' | 'error' = 'success') =>
     showToast({ message });
@@ -80,11 +84,33 @@
   let healthName = $state('');
   const tracker = new RequestTracker();
   const deleteTracker = new RequestTracker();
+  let actionRow = $state<Resource | null>(null);
+  let actions = $state(false);
+  const openActions = (row: Resource): void => {
+    actionRow = row;
+    actions = true;
+  };
+  /** 移动端行描述：节点为「分组 · 地址」，套餐为「价格 · 流量 · 时长」。 */
+  function rowDescription(row: Resource): string {
+    if ('node' in row) {
+      const group = groups[row.group] ?? '-';
+      const endpoint = row.node.endpoints[0] ?? '-';
+      return `${group} · ${endpoint}`;
+    }
+    if (!('price_minor' in row)) return '';
+    const price = row.currency === 'CNY'
+      ? printAmount(row.price_minor, 2) + ' 元'
+      : formatMoney(row.price_minor, row.currency);
+    const quota = 'quota_bytes' in row ? printAmount(row.quota_bytes, 9) + ' GB' : '-';
+    return `${price} · ${quota} · ${row.duration_days} 天`;
+  }
+  const rowStateText = (row: Resource): string => (row.enabled ? '已启用' : '已停用');
   const pager = new Pager<Resource>((offset, limit) =>
     kind === 'plans'
       ? api.searchPlans(session.token ?? '', offset, limit, term)
       : api.searchNodes(session.token ?? '', offset, limit, term),
   );
+  const pageCount = $derived(Math.max(1, Math.ceil(pager.total / pager.pageSize)));
   const checked = $derived(
     pager.items.filter((row) => selected.includes(rowId(row))),
   );
@@ -298,6 +324,84 @@
   </Space>
 {/snippet}
 
+{#if mobile}
+  <div class="m-page">
+    <div class="m-toolbar">
+      <Input
+        bind:value={query}
+        aria-label={`搜索${noun}`}
+        placeholder={kind === 'plans' ? '搜索套餐名称或 ID' : '搜索订阅名称、ID 或地址'}
+        clearable
+        onclear={clearSearch}
+        onkeydown={(event) => { if (event.key === 'Enter') search(); }}
+      />
+      <Button variant="plain" type="button" disabled={pager.loading} onclick={search}>搜索</Button>
+      <Button variant="plain" type="button" disabled={pager.loading || working} onclick={() => void refresh()}>刷新</Button>
+    </div>
+    {#if session.canWrite}
+      <Row justify="end" align="middle" class="m-actions">
+        {#if kind === 'nodes'}
+          <Button type="button" variant="plain" onclick={() => (groupOpen = true)}>新建分组</Button>
+          <Button type="button" variant="plain" onclick={() => (enrollOpen = true)}>注册节点</Button>
+        {/if}
+        <Button type="button" tone="primary" onclick={() => openCreate()}>新增{noun}</Button>
+      </Row>
+    {/if}
+    <div class="m-list">
+      {#if pager.items.length}
+        <CellGroup>
+          {#each pager.items as row (rowId(row))}
+            <Cell
+              description={rowDescription(row)}
+              clickable
+              onclick={() => void openRow(rowId(row), 'view')}
+            >
+              <Text truncated title={rowName(row)}>{rowName(row)}</Text>
+              {#snippet trailing()}
+                <Space size={8}>
+                  <Tag size="small" tone={row.enabled ? 'success' : 'neutral'}>{rowStateText(row)}</Tag>
+                  <Button
+                    variant="text"
+                    size="sm"
+                    aria-label={`${noun}操作 ${rowName(row)}`}
+                    onclick={(event) => {
+                      event.stopPropagation();
+                      openActions(row);
+                    }}
+                    onkeydown={(event) => event.stopPropagation()}
+                  >
+                    <Icon icon={More} size={20} />
+                  </Button>
+                </Space>
+              {/snippet}
+            </Cell>
+          {/each}
+        </CellGroup>
+      {:else if pager.loading}
+        <Skeleton rows={4} />
+      {:else}
+        <Empty imageSize={72} description={`暂无${noun}`} />
+      {/if}
+    </div>
+    <div class="m-pager">
+      <ButtonGroup
+        label="分页"
+        block
+        variant="plain"
+        disabled={pager.loading || working}
+        items={[
+          { key: 'prev', label: '上一页', disabled: pager.page <= 1 },
+          { key: 'page', label: `${pager.page} / ${pageCount}`, disabled: true },
+          { key: 'next', label: '下一页', disabled: pager.page >= pageCount },
+        ]}
+        onaction={(item) => {
+          selected = [];
+          pager.goto(pager.page + (item.key === 'prev' ? -1 : 1));
+        }}
+      />
+    </div>
+  </div>
+{:else}
 <Card
   class="content-card"
   aria-label={kind === 'plans' ? '套餐管理' : '服务节点'}
@@ -452,6 +556,7 @@
     </Row>
   {/snippet}
 </Card>
+{/if}
 
 <EnrollDialog bind:open={enrollOpen} />
 <GroupDialog bind:open={groupOpen} oncreated={() => void loadGroups()} />
@@ -559,3 +664,53 @@
 {#if healthOpen}
   <HealthDialog bind:open={healthOpen} id={healthId} name={healthName} />
 {/if}
+
+<ActionSheet
+  bind:open={actions}
+  layout="menu"
+  ariaLabel={`${noun}操作`}
+  options={[
+    { value: 'view', label: '查看详情' },
+    ...(session.canWrite ? [{ value: 'edit', label: `编辑${noun}` }] : []),
+    ...(kind === 'nodes' ? [{ value: 'health', label: '健康检查' }] : []),
+    ...(session.canWrite ? [{ value: 'delete', label: `删除${noun}`, danger: true }] : []),
+  ]}
+  onselect={(action) => {
+    const row = actionRow;
+    actions = false;
+    if (!row) return;
+    if (action === 'view') void openRow(rowId(row), 'view');
+    else if (action === 'edit') void openRow(rowId(row), 'edit');
+    else if (action === 'health') showHealth(row);
+    else if (action === 'delete') confirmRemove([row]);
+  }}
+/>
+
+<style>
+  .m-page {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .m-toolbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .m-toolbar :global(.ln-input) {
+    flex: 1;
+    min-width: 0;
+  }
+  .m-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .m-pager {
+    flex: none;
+  }
+</style>

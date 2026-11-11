@@ -69,6 +69,7 @@
 
 <PageNavbar title="审计日志" />
 
+<div class="page">
 <Grid min={480} gap={16}>
   <Row justify="space-between">
     <Text size="small">共 {pager.total} 条记录</Text>
@@ -127,6 +128,7 @@
     {/snippet}
   </Card>
 </Grid>
+</div>
 
 
 <Dialog bind:open title="清理日志" beforeClose={() => !clearing}>
@@ -140,3 +142,33 @@
     <Button tone="danger" loading={clearing} disabled={clearing} onclick={() => void clear()}>确认清理</Button>
   {/snippet}
 </Dialog>
+
+<style>
+  .page {
+  height: calc(100dvh - 95px);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 0;
+}
+.page :global(.ln-grid) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.page :global(.ln-card) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.page :global(.ln-card__body) {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.page :global(.ln-card__head),
+.page :global(.ln-card__footer) {
+  flex: none;
+}
+</style>

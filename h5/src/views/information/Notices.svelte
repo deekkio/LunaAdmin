@@ -2,4 +2,4 @@
   import Information from '../../components/Information.svelte';
 </script>
 
-<Information kind="notices" />
+<Information kind="notices" mobile />

@@ -20,7 +20,6 @@
   import { showMessage } from '@luna/components/message';
   import { RequestTracker } from '../api/request';
   import type { Order, OrderAccess } from '../api/types';
-  import OrderEditor from './OrderEditor.svelte';
   import { session } from '../stores/session';
   import { formatTraffic, formatMoney, formatTime, orderStateText } from '../utils/format';
   import { intIn, currencyRule, ipv4Rule, type FormModel } from '../utils/rules';
@@ -34,7 +33,6 @@
 
   let order = $state<Order | null>(null);
   let grant = $state<OrderAccess | null>(null);
-  let editorOpen = $state(false);
   let loading = $state(false);
   let settling = $state(false);
   const tracker = new RequestTracker();
@@ -219,10 +217,5 @@
   {/if}
   {#snippet footer()}
     <Button variant="plain" type="button" disabled={settling} onclick={() => (open = false)}>关闭</Button>
-    {#if order?.state === 'paid' && session.canWrite && session.canRead('order:write')}
-      <Button tone="primary" disabled={settling} onclick={() => (editorOpen = true)}>编辑</Button>
-    {/if}
   {/snippet}
 </Dialog>
-
-{#if editorOpen && order}<OrderEditor bind:open={editorOpen} {order} onsaved={() => { void load(id); onsaved?.(); }} />{/if}

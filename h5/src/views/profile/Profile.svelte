@@ -7,12 +7,11 @@
     Card,
     Cell,
     CellGroup,
-    Row,
-    Col,
     Dialog,
     Form,
     FormItem,
     Input,
+    Space,
     Text,
     Grid,
   } from '@luna/components/h5';
@@ -98,23 +97,27 @@
 </script>
 
 <PageNavbar title="我的" />
+<div class="page">
 <Grid min={480} gap={24}>
   <Card aria-label="当前账号">
-    <Row gutter={12} align="middle">
-      <Col span={6}><Avatar size={48} label={(Array.from(username)[0] ?? '').toUpperCase()} /></Col>
-      <Col span={18}>
+    <Cell clickable={false}>
+      {#snippet leading()}
+        <Avatar
+          size={48}
+          label={(Array.from(username)[0] ?? '').toUpperCase()}
+          style="margin-right: 14px;"
+        />
+      {/snippet}
+      <Space size={16} wrap={false}>
         <Text tag="div" role="heading" aria-level={1} size="large" truncated title={username}>
           {username}
         </Text>
         <IdentityTag root={session.root} />
-      </Col>
-    </Row>
+      </Space>
+    </Cell>
   </Card>
 
   <Grid min={480} gap={12}>
-    <Row>
-      <Text tag="div" role="heading" aria-level={2} size="large">账号与安全</Text>
-    </Row>
     <Card aria-label="账号与安全">
       <CellGroup>
         <Cell
@@ -144,21 +147,18 @@
             icon={menuIcon('key-round')}
           />
         {/if}
+        {#if links.length > 0}
+          <Cell
+            title="服务中心"
+            description="查看当前账号可访问的管理菜单"
+            icon={menuIcon('shield-check')}
+            arrow
+            onclick={() => void router.push('/menu')}
+          />
+        {/if}
       </CellGroup>
     </Card>
   </Grid>
-
-  {#if links.length > 0}
-    <Card aria-label="服务中心">
-      <Cell
-        title="服务中心"
-        description="查看当前账号可访问的管理菜单"
-        icon={menuIcon('shield-check')}
-        arrow
-        onclick={() => void router.push('/menu')}
-      />
-    </Card>
-  {/if}
 
   <Button
     tone="danger"
@@ -172,6 +172,7 @@
     退出登录
   </Button>
 </Grid>
+</div>
 
 <Dialog bind:open={infoOpen} title="账号资料" cancelButton="关闭">
   <Descriptions columns={1} direction="horizontal" border={false} items={[
@@ -222,3 +223,9 @@
 >
   <Text>确认退出当前账号吗？</Text>
 </Dialog>
+
+<style>
+  .page {
+    padding: 16px 14px 96px;
+  }
+</style>

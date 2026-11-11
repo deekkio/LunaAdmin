@@ -85,6 +85,7 @@
   rightText={session.canWrite ? '新增' : ''}
   onright={() => show(null, 'create')}
 />
+<div class="page">
 <Grid min={480} gap={16}>
   <Row><Text size="small">共 {pager.total} 条管理员</Text></Row>
   <Card aria-label="管理列表">
@@ -158,6 +159,7 @@
     {/snippet}
   </Card>
 </Grid>
+</div>
 
 <ActionSheet
   bind:open={actions}
@@ -177,3 +179,33 @@
 {#if open}
   <AccountDialog bind:open bind:mode {id} {roles} onsaved={() => void pager.refresh()} />
 {/if}
+
+<style>
+  .page {
+  height: calc(100dvh - 95px);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 0;
+}
+.page :global(.ln-grid) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.page :global(.ln-card) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.page :global(.ln-card__body) {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.page :global(.ln-card__head),
+.page :global(.ln-card__footer) {
+  flex: none;
+}
+</style>

@@ -42,6 +42,7 @@
 
 </script>
 <PageNavbar title="支付配置" rightText={canWrite ? '新增' : ''} onright={() => edit()} />
+<div class="page">
 <Grid min={480} gap={16}>
   <Text size="small">共 {pager.total} 条配置</Text>
   <Card aria-label="支付配置">
@@ -68,6 +69,7 @@
     {/snippet}
   </Card>
 </Grid>
+</div>
 {#if open}
   <Dialog bind:open title={model.revision ? '编辑支付配置' : '新增支付配置'} beforeClose={() => !saving}>
     <Picker value={model.provider} label="支付方式" title="选择支付方式" disabled={saving || model.revision > 0}
@@ -108,3 +110,32 @@
   </Dialog>
 {/if}
 
+<style>
+  .page {
+  height: calc(100dvh - 95px);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 0;
+}
+.page :global(.ln-grid) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.page :global(.ln-card) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.page :global(.ln-card__body) {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.page :global(.ln-card__head),
+.page :global(.ln-card__footer) {
+  flex: none;
+}
+</style>

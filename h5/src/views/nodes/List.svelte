@@ -5,4 +5,16 @@
 </script>
 
 <PageNavbar title="服务节点" />
-<Resource kind="nodes" {initialId} />
+<div class="page">
+  
+<Resource kind="nodes" {initialId} mobile />
+</div>
+
+<style>
+  .page {
+    height: calc(100dvh - 95px);
+    display: flex;
+    flex-direction: column;
+    padding: 12px 14px 0;
+  }
+</style>

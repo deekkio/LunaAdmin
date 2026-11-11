@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, Form, FormItem, Image, Input, Space, Text, Grid } from '@luna/components/h5';
+  import { Button, Form, FormItem, Input, Space, Text } from '@luna/components/h5';
   import logo from '../../assets/luna.svg';
   import type { FormResult, FormRules } from '@luna/components/contracts';
   import User from '@lucide/svelte/icons/user';
@@ -51,38 +51,61 @@
   };
 </script>
 
-<Grid min={480} gap={40}>
-  <Space direction="vertical" alignment="start" size={20}>
-    <Image src={logo} width={56} height={56} alt="Luna" fit="contain" />
-    <div>
-      <Text tag="div" role="heading" aria-level={1} size="large">登录控制台</Text>
-      <Text tag="p">登录 Luna，随时管理你的服务。</Text>
-    </div>
+<div class="login">
+  <Space direction="vertical" alignment="center" size={28} width="100%">
+    <Space direction="vertical" alignment="center" size={12} width="100%">
+      <svg width="64" height="64" viewBox="0 0 1024 1024" fill="none" aria-hidden="true" focusable="false">
+        <use href={`${logo}#rocket-vertical`} />
+      </svg>
+      <Text
+        tag="div"
+        role="heading"
+        aria-level={1}
+        size="large"
+        style="color: var(--ln-text-1, #303133);"
+      >登录控制台</Text>
+      <Text size="small" style="color: var(--ln-text-2, #606266);"
+      >登录 Luna，随时管理你的服务。</Text>
+    </Space>
+    <Form class="login-form" {model} {rules} labelPosition="top" onsubmit={submit}>
+      <FormItem prop="account" reserveMessage>
+        <Input bind:value={model.account} placeholder="账号" autocomplete="username" clearable>
+          {#snippet prefix()}
+            <User size={16} aria-hidden="true" />
+          {/snippet}
+        </Input>
+      </FormItem>
+      <FormItem prop="password" reserveMessage>
+        <Input
+          bind:value={model.password}
+          type="password"
+          showIcon
+          clearable
+          minlength={8}
+          maxlength={16}
+          placeholder="密码"
+          autocomplete="current-password"
+        >
+          {#snippet prefix()}
+            <Lock size={16} aria-hidden="true" />
+          {/snippet}
+        </Input>
+      </FormItem>
+      <Button tone="primary" block size="lg" type="submit" {loading} disabled={loading}>登录</Button>
+    </Form>
   </Space>
-  <Form {model} {rules} labelPosition="left" labelWidth={112} onsubmit={submit}>
-    <FormItem prop="account" reserveMessage>
-      <Input bind:value={model.account} placeholder="账号" autocomplete="username" clearable>
-        {#snippet prefix()}
-          <User size={16} aria-hidden="true" />
-        {/snippet}
-      </Input>
-    </FormItem>
-    <FormItem prop="password" reserveMessage>
-      <Input
-        bind:value={model.password}
-        type="password"
-        showIcon
-        clearable
-        minlength={8}
-        maxlength={16}
-        placeholder="密码"
-        autocomplete="current-password"
-      >
-        {#snippet prefix()}
-          <Lock size={16} aria-hidden="true" />
-        {/snippet}
-      </Input>
-    </FormItem>
-    <Button tone="primary" block size="lg" type="submit" {loading} disabled={loading}>登录</Button>
-  </Form>
-</Grid>
+</div>
+
+<style>
+  .login {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  .login :global(.login-form) {
+    width: min(320px, 100%);
+  }
+</style>

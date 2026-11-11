@@ -14,22 +14,27 @@
 </script>
 
 <PageNavbar title="服务中心" />
-{#if links.length}
-  <Grid min={84} gap={14}>
-    {#each links as link, index (link.path)}
-      <button class="tile" onclick={() => void router.push(link.path)} aria-label={link.label}>
-        <span class={`tile-icon ${tone(index)}`} aria-hidden="true">
-          <Icon icon={menuIcon(link.icon)} size={22} />
-        </span>
-        <Text size="small" class="tile-label">{link.label}</Text>
-      </button>
-    {/each}
-  </Grid>
-{:else}
-  <Empty imageSize={72} description="当前账号暂无可用的管理页面" />
-{/if}
+<div class="page">
+  {#if links.length}
+    <Grid min={84} gap={14}>
+      {#each links as link, index (link.path)}
+        <button class="tile" onclick={() => void router.push(link.path)} aria-label={link.label}>
+          <span class={`tile-icon ${tone(index)}`} aria-hidden="true">
+            <Icon icon={menuIcon(link.icon)} size={22} />
+          </span>
+          <Text size="small" class="tile-label">{link.label}</Text>
+        </button>
+      {/each}
+    </Grid>
+  {:else}
+    <Empty imageSize={72} description="当前账号暂无可用的管理页面" />
+  {/if}
+</div>
 
 <style>
+  .page {
+    padding: 16px 14px 96px;
+  }
   .tile {
     display: flex;
     flex-direction: column;
