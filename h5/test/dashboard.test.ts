@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { dateRange, moneyValue } from '../src/views/dashboard/model';
+import { dateRange, moneyValue, seriesTrend, trendPct, windowRange } from '../src/views/dashboard/model';
 
 test('dates include both selected calendar days and preserve local midnight', () => {
   expect(dateRange('', '')).toEqual({ version: 1, start: null, end: null });
@@ -30,4 +30,22 @@ test('money totals preserve minor-unit precision beyond safe integers', () => {
   expect(moneyValue('199')).toBe('1.99');
   expect(moneyValue('9007199254740993123')).toBe('90071992547409931.23');
   expect(moneyValue('invalid')).toBe('');
+});
+
+test('window ranges align to UTC day starts and cover exactly N day buckets', () => {
+  for (const days of [7, 30]) {
+    const range = windowRange(days);
+    expect(range.start % 86400).toBe(0);
+    expect(range.end - range.start).toBeLessThanOrEqual(days * 86400);
+    expect(range.end - range.start).toBeGreaterThan((days - 1) * 86400);
+  }
+});
+
+test('trend percentages handle growth, decline and zero bases', () => {
+  expect(trendPct(120, 100)).toBe(20);
+  expect(trendPct(80, 100)).toBe(-20);
+  expect(trendPct(5, 0)).toBeNull();
+  expect(seriesTrend([10, 20, 25])).toBe(25);
+  expect(seriesTrend([10, 20, 5])).toBe(-75);
+  expect(seriesTrend([7])).toBeNull();
 });

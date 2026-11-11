@@ -29,3 +29,26 @@ body {
   font-family: ui-monospace, 'SF Mono', Consolas, monospace;
   font-size: 12px;
 }
+
+/* 侧边栏菜单：圆角高亮与左侧指示条（对齐控制台视觉稿）。 */
+#admin-sidebar .ln-menu {
+  --ln-menu-radius: 10px;
+  --ln-menu-item-inset: 10px;
+  --ln-menu-bg: transparent;
+}
+
+#admin-sidebar .ln-menu .ln-menu__item--active {
+  position: relative;
+}
+
+#admin-sidebar .ln-menu .ln-menu__item--active::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--ln-primary, #165dff);
+}

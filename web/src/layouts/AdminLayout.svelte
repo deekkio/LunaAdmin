@@ -214,6 +214,12 @@
   </Header>
 {/snippet}
 
+{#snippet footer(collapsed: boolean)}
+  {#if !collapsed}
+    <Text size="small" style="color: var(--ln-text-3, #86909c);">{copy.version} v1.0.0</Text>
+  {/if}
+{/snippet}
+
 <Container style="height: 100vh;">
   <Aside
     id="admin-sidebar"
@@ -230,6 +236,7 @@
       bordered={false}
       {onselect}
       header={brand}
+      footer={footer}
       ariaLabel={copy.navigation}
       style="min-height: 100%; border-right: 1px solid var(--ln-border-1, #e4e7ed);"
     />

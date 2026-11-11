@@ -10,6 +10,7 @@
   import { homeLinks, homePath } from './layouts/home';
   import { menuIcon } from './layouts/icons';
   import { mobilePage } from './layouts/mobile';
+  import { pagePath } from './router/views';
 
   let current = $state.raw(router.currentRoute);
   onDestroy(
@@ -19,11 +20,13 @@
   );
   const onPublicRoute = $derived(Boolean(current.meta.public));
   const links = $derived(homeLinks(navigation.menu));
+  const ordersPath = $derived(pagePath(navigation.menu, 'Orders'));
   const tabs = $derived([
     { value: homePath(navigation.menu), label: '首页', icon: menuIcon('layout-dashboard') },
     ...(links.length > 0
-      ? [{ value: '/menu', label: '服务', icon: menuIcon('network') }]
+      ? [{ value: '/menu', label: '服务', icon: menuIcon('apps') }]
       : []),
+    ...(ordersPath ? [{ value: ordersPath, label: '订单', icon: menuIcon('shopping-cart') }] : []),
     { value: '/profile', label: '我的', icon: User },
   ]);
   const page = $derived(

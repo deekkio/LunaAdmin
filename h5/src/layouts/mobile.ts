@@ -1,5 +1,5 @@
 import type { NavRoute } from '../api/types';
-import { viewKey, viewPaths } from '../router/views';
+import { pagePath, viewKey, viewPaths } from '../router/views';
 
 export interface MobilePage {
   root: boolean;
@@ -11,6 +11,8 @@ export interface MobilePage {
 export const mobilePage = (path: string, home: string, parent: unknown, routes: readonly NavRoute[]): MobilePage => {
   if (path === home) return { root: true, tab: home, parent: home };
   if (path === '/profile' || path === '/menu') return { root: true, tab: path, parent: home };
+  const orders = pagePath(routes, 'Orders');
+  if (orders && path === orders) return { root: true, tab: orders, parent: home };
   const find = (items: readonly NavRoute[]): boolean => items.some((item) =>
     (item.path === parent && Boolean(item.view && viewPaths[viewKey(item.view)])) || find(item.children),
   );

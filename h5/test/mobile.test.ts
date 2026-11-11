@@ -7,11 +7,21 @@ const routes: NavRoute[] = [{
   children: [{ code: 'staff', title: '管理成员', path: '/staff', view: 'Accounts', icon: null, rank: 0, children: [] }],
 }];
 
+const withOrders: NavRoute[] = [
+  ...routes,
+  { code: 'orders', title: '订单列表', path: '/orders', view: 'Orders', icon: null, rank: 0, children: [] },
+];
+
 describe('mobile page hierarchy', () => {
   test('only keeps the registered home and mobile shells in the bottom navigation', () => {
     expect(mobilePage('/hub', '/hub', undefined, routes)).toEqual({ root: true, tab: '/hub', parent: '/hub' });
     expect(mobilePage('/menu', '/hub', undefined, routes)).toEqual({ root: true, tab: '/menu', parent: '/hub' });
     expect(mobilePage('/profile', '/hub', undefined, routes)).toEqual({ root: true, tab: '/profile', parent: '/hub' });
+  });
+
+  test('the server-driven orders list joins the bottom navigation as a root tab', () => {
+    expect(mobilePage('/orders', '/hub', undefined, routes)).toEqual({ root: false, tab: '', parent: '/menu' });
+    expect(mobilePage('/orders', '/hub', undefined, withOrders)).toEqual({ root: true, tab: '/orders', parent: '/hub' });
   });
 
   test('returns details to actual parent pages and lists to the server menu tree', () => {

@@ -23,6 +23,7 @@ const zh = {
   system: '跟随系统',
   language: '切换语言',
   logout: '退出登录',
+  version: '系统版本',
 };
 
 const en: typeof zh = {
@@ -42,6 +43,7 @@ const en: typeof zh = {
   system: 'System preference',
   language: 'Change language',
   logout: 'Log out',
+  version: 'System version',
 };
 
 const messages = { 'zh-CN': zh, 'en-US': en };

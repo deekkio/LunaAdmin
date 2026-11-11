@@ -5,6 +5,7 @@ import FileText from '@lucide/svelte/icons/file-text';
 import Folder from '@lucide/svelte/icons/folder';
 import KeyRound from '@lucide/svelte/icons/key-round';
 import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
+import LayoutGrid from '@lucide/svelte/icons/layout-grid';
 import ListTree from '@lucide/svelte/icons/list-tree';
 import Network from '@lucide/svelte/icons/network';
 import Package from '@lucide/svelte/icons/package';
@@ -22,6 +23,7 @@ type Glyph = Component<{ size?: number | string }>;
 // 按需引入系统菜单使用的 Lucide 图标，服务端名称只在此表中解析。
 const icons = new Map<string, Glyph>([
   ['credit-card', CreditCard],
+  ['apps', LayoutGrid],
   ['book-open', BookOpen],
   ['file-text', FileText],
   ['folder', Folder],
