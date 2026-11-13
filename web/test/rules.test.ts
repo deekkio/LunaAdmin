@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import { formRules, validateRules } from '@luna/components/contracts';
-import { hex32Rules, intIn, ipv4Rule } from '../src/utils/rules';
-import { nodeModel, nodeRules } from '../src/views/nodes/model';
+import { hex32Rules, intIn } from '../src/utils';
+import { pageModule } from './view';
+
+const { ipv4Rule } = await pageModule(new URL('../src/views/orders/Detail.svelte', import.meta.url));
+const { nodeModel, nodeRules } = await pageModule(new URL('../src/views/nodes/List.svelte', import.meta.url));
 
 describe('form validation', () => {
   test('validates lowercase unprefixed hex IDs with the form rules', async () => {
@@ -9,7 +12,7 @@ describe('form validation', () => {
     for (const value of ['a'.repeat(32), '0'.repeat(32)]) {
       expect(await validateRules(value, rules, {}, 'id')).toBeUndefined();
     }
-    for (const value of ['', 'A'.repeat(32), 'a'.repeat(31), 'g'.repeat(32), '0x' + 'a'.repeat(30), '0h' + 'a'.repeat(30)]) {
+    for (const value of ['', 'A'.repeat(32), 'a'.repeat(31), 'g'.repeat(32), '0x' + 'a'.repeat(30), '0h' + 'a'.repeat(30), 'a'.repeat(32) + '\n', 32]) {
       expect(await validateRules(value, rules, {}, 'id')).toBeDefined();
     }
   });

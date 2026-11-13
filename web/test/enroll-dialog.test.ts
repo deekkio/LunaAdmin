@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
-import { command, control, ingress, settings } from '../src/views/nodes/model';
+import { pageModule } from './view';
+
+const { command, control, ingress, settings } = await pageModule(new URL('../src/views/nodes/EnrollDialog.svelte', import.meta.url));
 
 const makeDialog = () => {
-  const source = readFileSync(new URL('../src/components/EnrollDialog.svelte', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../src/views/nodes/EnrollDialog.svelte', import.meta.url), 'utf8');
   const script = source.match(/<script lang="ts">([\s\S]*?)<\/script>/)![1]!
     .replace(/^\s*import[^\n]*;\s*$/gm, '');
   const transpiler = new Bun.Transpiler({ loader: 'ts' });

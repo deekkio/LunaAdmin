@@ -1,46 +1,35 @@
 import { describe, expect, test } from 'bun:test';
 import { createMemoryHistory, createRouter } from 'luna-router/core';
-import { buildRecords, createSync } from '../src/router/routes';
-import { viewEntries, viewKey, viewPaths } from '../src/router/views';
-import { menuModel, menuRows, menuValue } from '../src/views/access/model';
+import { buildRecords, createSync } from './router';
+import { views, hasView } from './router';
+import { pageModule } from './view';
 import type { NavMenu } from '../src/api/types';
 
+const { menuModel, menuRows, menuValue } = await pageModule(new URL('../src/views/access/Menus.svelte', import.meta.url));
+
 describe('page coverage', () => {
-  test('every registered view has an implementation', async () => {
-    for (const entry of viewEntries) {
-      expect(
-        await Bun.file(
-          new URL(`../src/views/${entry.file}`, import.meta.url),
-        ).exists(),
-      ).toBe(true);
-    }
-    for (const name of [
-      'Dashboard',
-      'Menus',
-    ]) {
-      expect(viewPaths[viewKey(name)]).toBeDefined();
-    }
-    expect(viewPaths[viewKey('node-list')]).toBe(
-      '../views/nodes/List.svelte',
-    );
-    expect(viewPaths[viewKey('nodes/Detail')]).toBe(
-      '../views/nodes/Detail.svelte',
-    );
+  test('discovers real component paths and rejects business keys or paths outside the glob', () => {
+    expect(Object.keys(views)).toContain('../views/nodes/List.svelte');
+    expect(Object.keys(views)).toContain('../views/information/Notices.svelte');
+    for (const path of ['dashboard/Overview', 'access/Menus', 'nodes/List']) expect(hasView(path)).toBe(true);
+    for (const path of ['Nodes', 'NodeDetail', 'node-list', 'nodes/Detail', '../views/nodes/List', 'nodes/List.svelte'])
+      expect(hasView(path)).toBe(false);
   });
 
-  test('omits removed subscription views from server navigation', () => {
+  test('keeps unsupported server views on the missing page without a registered implementation', () => {
     const input = ['NodeSubscriptions', 'UserSubscriptions', 'nodes/Subscriptions', 'users/Subscriptions'].map((view, index) => ({
-      code: `removed${index}`, title: '订阅管理', path: `/removed${index}`, view,
+      id: index + 1, group: false, hidden: false, code: `removed${index}`, title: '订阅管理', path: `/removed${index}`, view,
       icon: null, rank: index, children: [],
     }));
-    for (const item of input) expect(viewPaths[viewKey(item.view)]).toBeUndefined();
+    for (const item of input) expect(hasView(item.view)).toBe(false);
     const result = buildRecords([...input, {
-      code: 'nodes', title: '节点列表', path: '/nodes', view: 'Nodes',
+      id: 5, group: false, hidden: false, code: 'nodes', title: '节点列表', path: '/nodes', view: 'nodes/List',
       icon: null, rank: 4, children: [],
-    }], (view) => view && viewPaths[viewKey(view)] ? () => Promise.resolve({}) : undefined);
-    expect(result.records.map((item) => item.path)).toEqual(['/nodes']);
-    expect(result.menu.map((item) => item.path)).toEqual(['/nodes']);
-    expect([...result.allowed]).toEqual(['/nodes']);
+    }], (view) => view === null || hasView(view) ? () => Promise.resolve({}) : undefined);
+    expect(result.records.map(item => item.path)).toEqual(['/removed0', '/removed1', '/removed2', '/removed3', '/nodes']);
+    expect(result.records.every(item => typeof item.lazy === 'function')).toBe(true);
+    expect(result.menu).toHaveLength(5);
+    expect(result.allowed.has('/nodes')).toBe(true);
   });
 
   test('installs only server routes, preserves infrastructure and removes deleted pages', async () => {
@@ -58,7 +47,7 @@ describe('page coverage', () => {
     expect(router.currentRoute.meta.title).toBe('服务端首页');
     expect(router.resolve('/login').name).toBe('login');
     expect(router.resolve('/nodes/abc').name).toBe('missing');
-    sync([{ path: '/custom', name: 'nodes', meta: { title: '自定义节点', dynamic: true } }]);
+    sync([{ path: '/custom', name: 'nodes', lazy: async () => ({}), meta: { title: '自定义节点', dynamic: true } }]);
     await router.replace('/');
     expect(router.currentRoute.path).toBe('/custom');
     expect(router.currentRoute.name).toBe('nav:nodes');
@@ -87,7 +76,7 @@ describe('page coverage', () => {
 
 describe('menu editing', () => {
   const item: NavMenu = {
-    id: 'a'.repeat(32),
+    id: 1,
     parent_id: null,
     code: 'nodes',
     title: '节点',
@@ -95,19 +84,19 @@ describe('menu editing', () => {
     view: null,
     icon: null,
     rank: 2,
-    enabled: true,
+    enabled: true, group: false, hidden: false,
     perm: null,
     children: [
       {
-        id: 'b'.repeat(32),
-        parent_id: 'a'.repeat(32),
+        id: 2,
+        parent_id: 1,
         code: 'list',
         title: '列表',
         path: '/nodes/list',
-        view: 'Nodes',
+        view: 'nodes/List',
         icon: null,
         rank: 1,
-        enabled: false,
+        enabled: false, group: false, hidden: false,
         perm: 'node:read',
         children: [],
       },
@@ -118,8 +107,8 @@ describe('menu editing', () => {
     expect(
       menuRows([item]).map((row) => [row.id, row.depth, row.enabled]),
     ).toEqual([
-      ['a'.repeat(32), 0, true],
-      ['b'.repeat(32), 1, false],
+      [1, 0, true],
+      [2, 1, false],
     ]);
     expect(item.children[0].parent_id).toBe(item.id);
   });
@@ -137,7 +126,7 @@ describe('menu editing', () => {
       view: null,
       icon: null,
       rank: -5,
-      enabled: false,
+      enabled: false, group: false, hidden: false,
       perm: null,
     });
   });

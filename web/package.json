@@ -24,7 +24,7 @@
   "dependencies": {
     "@lucide/svelte": "1.37.0",
     "@luna/components": "file:../../APP/LunaUI/packages/components/dist",
-    "@luna/theme-chalk": "./vendor/theme-e4d4229a798d.tgz",
+    "@luna/theme-chalk": "./vendor/theme-fa15e9ac532d.tgz",
     "date-fns": "4.4.0",
     "decimal.js": "10.6.0",
     "echarts": "6.1.0",

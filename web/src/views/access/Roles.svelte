@@ -7,10 +7,10 @@
   import type { TableCell, TableColumn } from '@luna/components/contracts';
   import { api, listFilter } from '../../api';
   import type { Role } from '../../api/types';
-  import { session } from '../../stores/index.svelte';
+  import { session } from '../../stores/state.svelte';
   import { PAGE_SIZES, Pager } from '../../components/list.svelte';
-  import { canEdit, isRoot, type RoleMode } from './roles';
-  import RoleDialog from '../../components/RoleDialog.svelte';
+  import { canEdit, isRoot, type RoleMode } from './Role.svelte';
+  import RoleView from './Role.svelte';
 
   let query = $state('');
   let status = $state('');
@@ -116,4 +116,4 @@
     </Row>{/snippet}
 </Card>
 
-{#if open}<RoleDialog bind:open bind:mode {id} onsaved={() => void pager.refresh()} />{/if}
+{#if open}<RoleView modal bind:open bind:mode {id} onsaved={() => void pager.refresh()} />{/if}

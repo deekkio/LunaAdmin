@@ -1,9 +1,10 @@
 import { afterEach, expect, test } from 'bun:test';
-import type { Entry } from '../src/api/types';
+import type { Entry, NavRoute } from '../src/api/types';
 import { api } from '../src/api';
-import { entryModel, entryRules, entryValue } from '../src/views/information/model';
-import { buildRecords } from '../src/router/routes';
-import { viewKey, viewPaths } from '../src/router/views';
+import { pageModule } from './view';
+const { entryModel, entryRules, entryValue } = await pageModule(new URL('../src/views/information/List.svelte', import.meta.url));
+import { buildRecords, menuId } from './router';
+import { pagePath, hasView } from './router';
 
 const originalFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = originalFetch; });
@@ -50,9 +51,22 @@ test('rejects invalid minutes, categories and oversized UTF-8 content', () => {
 });
 
 test('registers both information views without adding fallback navigation', () => {
-  expect(viewPaths.announcements).toBe('../views/information/Announcements.svelte');
-  expect(viewPaths.notices).toBe('../views/information/Notices.svelte');
+  expect(hasView('information/List')).toBe(true);
+  expect(hasView('information/Notices')).toBe(true);
   expect(buildRecords([], () => undefined).menu).toEqual([]);
+});
+
+test('preserves distinct announcement and notice entries without business-key mapping', () => {
+  const routes: NavRoute[] = [
+    { id: menuId('notice'), group: false, hidden: false, code: 'notice', title: '系统提醒', path: '/messages/reminders', view: 'information/Notices', icon: null, rank: 0, children: [] },
+    { id: menuId('announcement'), group: false, hidden: false, code: 'announcement', title: '公告管理', path: '/messages/news', view: 'information/List', icon: null, rank: 1, children: [] },
+  ];
+  expect(pagePath(routes, 'information/List')).toBe('/messages/news');
+  expect(pagePath(routes, 'information/Notices')).toBe('/messages/reminders');
+  expect(hasView('information/List')).toBe(true);
+  expect(hasView('Announcements')).toBe(false);
+  expect(hasView('information/Notices')).toBe(true);
+  expect(hasView('Notices')).toBe(false);
 });
 
 test('uses server pagination and shared response envelopes for search, writes and settings', async () => {
@@ -78,11 +92,13 @@ test('uses server pagination and shared response envelopes for search, writes an
 
 test('keeps both information pages under the server directory with their actual titles', () => {
   const routes = buildRecords([{
+    id: menuId('information'), group: false, hidden: false,
     code: 'information', title: '自定义信息中心', path: '/information', view: null, icon: null, rank: 0,
-    children: ['Announcements', 'Notices'].map((view, index) => ({
+    children: ['information/List', 'information/Notices'].map((view, index) => ({
+      id: menuId(view), group: false, hidden: false,
       code: view, title: `服务端标题${index}`, path: `/custom/${index}`, view, icon: null, rank: index, children: [],
     })),
-  }], view => view && viewPaths[viewKey(view)] ? () => Promise.resolve({}) : undefined);
+  }], view => view && hasView(view) ? () => Promise.resolve({}) : undefined);
   const links = routes.menu;
   expect(links.map(item => [item.title, item.children.map(child => [child.path, child.title])])).toEqual([
     ['自定义信息中心', [['/custom/0', '服务端标题0'], ['/custom/1', '服务端标题1']]],

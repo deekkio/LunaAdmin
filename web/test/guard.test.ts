@@ -1,11 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { createMemoryHistory, createRouter } from 'luna-router/core';
 import type { NavRoute, Principal } from '../src/api/types';
-import { createGuard } from '../src/router/guard';
-import { buildRecords, createSync } from '../src/router/routes';
-import { pagePath } from '../src/router/views';
+import { createGuard } from './router';
+import { buildRecords, createSync, menuId } from './router';
+import { pagePath } from './router';
 
-const entry = (path: string, view = 'Nodes'): NavRoute => ({
+const entry = (path: string, view = 'nodes/List'): NavRoute => ({
+  id: menuId(path), group: false, hidden: false,
   code: 'page', title: '服务端页面', path, view, icon: null, rank: 0, children: [],
 });
 
@@ -27,7 +28,11 @@ const createState = (path: string, routes: NavRoute[]) => {
     authenticated: true,
     token: 'fixture' as string | null,
     principal: null as Principal | null,
-    setPrincipal: (value: Principal) => { session.principal = value; },
+    restore: async () => {
+      if (!session.authenticated) return false;
+      if (!session.principal) { counts.read++; session.principal = principal; }
+      return true;
+    },
   };
   let menu: NavRoute[] = [];
   const navigation = {
@@ -45,10 +50,7 @@ const createState = (path: string, routes: NavRoute[]) => {
       navigation.loaded = false;
     },
   };
-  router.beforeEach(createGuard(session, navigation, async () => {
-    counts.read++;
-    return { code: '', message: '', data: principal };
-  }));
+  router.beforeEach(createGuard(session, navigation));
   return { router, session, navigation, counts, sync };
 };
 
@@ -57,7 +59,7 @@ describe('navigation guard', () => {
     const state = createState('/custom/nodes?tab=active#details', [entry('/custom/nodes')]);
     await state.router.start();
     expect(state.router.currentRoute.fullPath).toBe('/custom/nodes?tab=active#details');
-    expect(state.router.currentRoute.name).toBe('nav:page');
+    expect(state.router.currentRoute.name).toBe(`nav:${menuId('/custom/nodes')}`);
     expect(state.router.currentRoute.meta.title).toBe('服务端页面');
     expect(state.counts).toEqual({ read: 1, page: 1, missing: 0 });
     state.router.destroy();
@@ -76,7 +78,7 @@ describe('navigation guard', () => {
   test('uses a server root page without redirecting back to the bootstrap root', async () => {
     const state = createState('/', [entry('/')]);
     await state.router.start();
-    expect(state.router.currentRoute.name).toBe('nav:page');
+    expect(state.router.currentRoute.name).toBe(`nav:${menuId('/')}`);
     expect(state.counts.page).toBe(1);
     state.router.destroy();
   });
@@ -107,8 +109,20 @@ describe('navigation guard', () => {
 });
 
 test('finds return paths from custom server trees and never guesses a business path', () => {
-  const routes = [{ ...entry('/custom', ''), view: null, children: [entry('/custom/people', 'users-list')] }];
-  expect(pagePath(routes, 'Users')).toBe('/custom/people');
-  expect(pagePath([entry('/custom/people/:id', 'UserDetail')], 'Users')).toBe('/denied');
-  expect(pagePath([], 'Users')).toBe('/denied');
+  const routes = [{ ...entry('/custom', ''), view: null, children: [entry('/custom/people', 'users/List')] }];
+  expect(pagePath(routes, 'users/List')).toBe('/custom/people');
+  expect(pagePath([entry('/custom/people/:id', 'users/Detail')], 'users/List')).toBe('/denied');
+  expect(pagePath([], 'users/List')).toBe('/denied');
+});
+
+test('a stale identity response cannot clear the replacement session navigation', async () => {
+  const router = createRouter({ history: createMemoryHistory(), routes: [] });
+  let resets = 0;
+  const session = { authenticated: true, restore: async () => false };
+  const navigation = { loaded: true, firstPath: '/new-account', load: async () => {}, reset: () => { resets++; } };
+  try {
+    await createGuard(session, navigation)(router.resolve('/private'), router.currentRoute);
+    expect(resets).toBe(0);
+    expect(navigation.firstPath).toBe('/new-account');
+  } finally { router.destroy(); }
 });

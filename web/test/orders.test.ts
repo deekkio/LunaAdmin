@@ -1,7 +1,9 @@
 import { expect, test } from 'bun:test';
-import { orderModel, orderValue, applyPlan, orderStateText } from '../src/views/orders/model';
-import { formatTraffic } from '../src/utils/format';
+import { pageModule } from './view';
+import { formatTraffic } from '../src/utils';
 import type { OrderAccess, Plan } from '../src/api/types';
+
+const { orderModel, orderValue, applyPlan, orderStateText } = await pageModule(new URL('../src/views/orders/Editor.svelte', import.meta.url));
 
 const started = 1_600_000_000;
 const grant: OrderAccess = {

@@ -44,6 +44,7 @@ export type Code =
   | 'missing'
   | 'conflict'
   | 'quota'
+  | 'device_limit'
   | 'rate_limited'
   | 'unavailable';
 
@@ -90,6 +91,17 @@ export interface Profile {
 export interface UserView {
   profile: Profile;
   group: { id: string; name: string };
+  device_limit: number;
+}
+
+export interface UserDevice {
+  id: string;
+  model: string | null;
+  mac: string | null;
+  mac_state: 'available' | 'restricted' | 'unavailable' | null;
+  state: 'active' | 'disabled';
+  expires_at: number;
+  last_seen: number | null;
 }
 
 export interface UserInput {
@@ -98,6 +110,7 @@ export interface UserInput {
   email: string;
   password: string;
   state: 'active' | 'disabled';
+  device_limit?: number;
 }
 
 export interface DeleteInput {
@@ -334,6 +347,7 @@ export interface StateChange {
   state?: 'active' | 'disabled';
   group?: string;
   password?: string;
+  device_limit?: number;
 }
 
 export interface Tunnel {
@@ -403,19 +417,22 @@ export interface GrantsInput {
 
 /** 动态导航路由：由 /v1/routes 按当前账号权限过滤后返回。 */
 export interface NavRoute {
+  id: number;
   code: string;
   title: string;
   path: string;
   view: string | null;
   icon: string | null;
   rank: number;
+  group: boolean;
+  hidden: boolean;
   children: NavRoute[];
 }
 
 /** 菜单管理记录（/v1/menus）。 */
 export interface NavMenu {
-  id: string;
-  parent_id: string | null;
+  id: number;
+  parent_id: number | null;
   code: string;
   title: string;
   path: string;
@@ -423,6 +440,8 @@ export interface NavMenu {
   icon: string | null;
   rank: number;
   enabled: boolean;
+  group: boolean;
+  hidden: boolean;
   perm: string | null;
   children: NavMenu[];
 }
@@ -430,8 +449,8 @@ export interface NavMenu {
 export interface MenuInput {
   version: number;
   request: string;
-  id: string;
-  parent_id: string | null;
+  id: number | null;
+  parent_id: number | null;
   code: string;
   title: string;
   path: string;
@@ -439,6 +458,8 @@ export interface MenuInput {
   icon: string | null;
   rank: number;
   enabled: boolean;
+  group: boolean;
+  hidden: boolean;
   perm: string | null;
 }
 
@@ -566,6 +587,8 @@ export interface OrderCreate {
 export interface StoredSession {
   token: string;
   expires_at: number;
+  navigation?: { version: number; account: string; routes: NavRoute[] };
+  sidebar?: { account: string; keys: string[] };
 }
 
 export type Language = 'zh-CN' | 'en-US';

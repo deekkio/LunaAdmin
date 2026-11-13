@@ -8,7 +8,6 @@
     Card,
     Button,
     Link,
-    Dialog,
     Form,
     FormItem,
     Input,
@@ -20,14 +19,14 @@
     Text,
     Row,
   } from '@luna/components';
+  import Dialog from '../../components/Dialog.svelte';
   import type { TableCell, FormResult, FormRules, TableColumn } from '@luna/components/contracts';
   import { api, listFilter } from '../../api';
   import { showMessage } from '@luna/components/message';
   import { newRequestId } from '../../api/request';
   import type { Permission } from '../../api/types';
-  import { session } from '../../stores/index.svelte';
+  import { session } from '../../stores/state.svelte';
   import { PAGE_SIZES, Pager } from '../../components/list.svelte';
-  import { requiredText } from '../../utils/rules';
 
   let query = $state('');
   let status = $state('');
@@ -59,7 +58,7 @@
       { required: true, message: '请输入权限码' },
       { pattern: /^[a-z][a-z0-9_-]*:[a-z][a-z0-9_-]*$/, message: '权限码必须是 resource:action 形式，且以小写字母开头' },
     ],
-    name: [requiredText('权限名称'), { max: 64, message: '名称不能超过 64 个字符' }],
+    name: [{ required: true, message: '请输入权限名称' }, { max: 64, message: '名称不能超过 64 个字符' }],
   };
 
   const openCreate = (): void => {
@@ -172,7 +171,7 @@
   {/snippet}
 </Card>
 
-<Dialog
+<Dialog height={340}
   bind:open={editOpen}
   title={existing ? '编辑权限' : '新建权限'}
   width={480}

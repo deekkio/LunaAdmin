@@ -3,7 +3,6 @@
   import {
     Card,
     Button,
-    Dialog,
     Form,
     FormItem,
     Input,
@@ -17,15 +16,15 @@
     Col,
     Row,
   } from '@luna/components';
+  import Dialog from '../../components/Dialog.svelte';
   import type { TableCell, FormResult, FormRules, TableColumn } from '@luna/components/contracts';
   import { api } from '../../api';
   import { showMessage } from '@luna/components/message';
   import { newRequestId } from '../../api/request';
   import type { Tutorial } from '../../api/types';
-  import { session } from '../../stores/index.svelte';
+  import { session } from '../../stores/state.svelte';
   import { PAGE_SIZES, Pager } from '../../components/list.svelte';
-  import { formatTime } from '../../utils/format';
-  import { hex32Rules, requiredText } from '../../utils/rules';
+  import { formatTime, hex32Rules } from '../../utils';
 
   const pager = new Pager<Tutorial>((offset, limit) => api.tutorials(session.token ?? '', offset, limit));
 
@@ -48,8 +47,8 @@
       { required: true, message: '请输入 Slug' },
       { pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/, message: 'Slug 只能包含小写字母、数字和中段连字符，且不能以连字符开头或结尾' },
     ],
-    title: [requiredText('标题'), { max: 160, message: '标题不能超过 160 个字符' }],
-    body: [requiredText('正文'), { max: 65_536, message: '正文过长' }],
+    title: [{ required: true, message: '请输入标题' }, { max: 160, message: '标题不能超过 160 个字符' }],
+    body: [{ required: true, message: '请输入正文' }, { max: 65_536, message: '正文过长' }],
   };
 
   const openCreate = (): void => {

@@ -1,6 +1,8 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, mock, test } from 'bun:test';
 import type { Sample } from '../src/api/types';
-import { appendSample, formatMetric, healthSeries, sampleRate, SAMPLE_LIMIT, SAMPLE_WINDOW } from '../src/views/nodes/health';
+import { pageModule } from './view';
+
+const { appendSample, formatMetric, healthSeries, sampleRate, SAMPLE_LIMIT, SAMPLE_WINDOW } = await pageModule(new URL('../src/views/nodes/HealthDialog.svelte', import.meta.url));
 
 const fixture = (sequence = 1, values: Partial<Sample> = {}): Sample => ({
   version: 1, node: '1'.repeat(32), boot: '2'.repeat(32), sequence,
@@ -65,5 +67,71 @@ describe('health sampling', () => {
     }
     expect(formatMetric(null, 'traffic')).toBe('-');
     expect(formatMetric(12.5, 'cpu')).toBe('12.5%');
+  });
+});
+
+test('chart factories update samples, height and observers through the loaded engine', async () => {
+  const { mountChart } = await pageModule(new URL('../src/views/nodes/HealthChart.svelte', import.meta.url));
+  const saved = new Map(['document', 'getComputedStyle', 'ResizeObserver', 'MutationObserver'].map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  const observers: { notify: () => void; disconnect: ReturnType<typeof mock> }[] = [];
+  type ChartState = { series: { name: string; data: [number, number | null][] }[]; legend: { show: boolean } };
+  const setOption = mock((_option: ChartState, _settings: unknown) => {});
+  const resize = mock(() => {});
+  const dispose = mock(() => {});
+  const engine = { setOption, resize, dispose };
+  const init = mock(() => engine);
+  const host = { isConnected: true, clientWidth: 300 };
+  class Observer {
+    disconnect = mock(() => {});
+    constructor(notify: () => void) { observers.push({ notify, disconnect: this.disconnect }); }
+    observe() {}
+  }
+  Object.defineProperties(globalThis, {
+    document: { configurable: true, value: { documentElement: {} } },
+    getComputedStyle: { configurable: true, value: () => ({ fontFamily: 'sans-serif', getPropertyValue: () => '' }) },
+    ResizeObserver: { configurable: true, value: Observer },
+    MutationObserver: { configurable: true, value: Observer },
+  });
+  try {
+    const chart = mountChart(host, { kind: 'cpu', samples: [fixture()], height: 100 }, { init });
+    expect(init).toHaveBeenCalledWith(host, undefined, { renderer: 'svg', width: 300, height: 100 });
+    expect(setOption.mock.calls.at(-1)![0].series[0].data).toEqual([[fixture().measured_at * 1000, 12.5]]);
+    chart.update({ kind: 'connections', samples: [fixture(2)], height: 120 });
+    expect(resize).toHaveBeenCalledWith({ width: 300, height: 120, animation: { duration: 0 } });
+    expect(setOption.mock.calls.at(-1)![0].series.map((line: { name: string }) => line.name)).toEqual(['活动连接', '连接容量']);
+    host.clientWidth = 220;
+    observers[0].notify();
+    expect(resize).toHaveBeenLastCalledWith({ width: 220, height: 120, animation: { duration: 0 } });
+    expect(setOption.mock.calls.at(-1)![0].legend.show).toBe(false);
+    chart.dispose();
+    for (const observer of observers) expect(observer.disconnect).toHaveBeenCalledTimes(1);
+    expect(dispose).toHaveBeenCalledTimes(1);
+  } finally {
+    for (const [key, descriptor] of saved) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else Reflect.deleteProperty(globalThis, key);
+    }
+  }
+});
+
+describe('health memory units', () => {
+  test('renders byte units', () => {
+    expect(formatMetric(0, 'memory')).toBe('0 B');
+    expect(formatMetric(1023, 'memory')).toBe('1023 B');
+    expect(formatMetric(1024, 'memory')).toBe('1.00 KiB');
+    expect(formatMetric(1536, 'memory')).toBe('1.50 KiB');
+    expect(formatMetric(1024 * 1024 * 5, 'memory')).toBe('5.00 MiB');
+    expect(formatMetric(10 * 1024, 'memory')).toBe('10.0 KiB');
+    expect(formatMetric(100 * 1024, 'memory')).toBe('100 KiB');
+    expect(formatMetric(1024 ** 2 - 1, 'memory')).toBe('1024 KiB');
+    expect(formatMetric(1024 ** 6, 'memory')).toBe('1024 PiB');
+  });
+
+  test('renders missing values', () => {
+    expect(formatMetric(null, 'memory')).toBe('-');
+    expect(formatMetric(undefined, 'memory')).toBe('-');
+    expect(formatMetric(-1, 'memory')).toBe('-');
+    expect(formatMetric(NaN, 'memory')).toBe('-');
+    expect(formatMetric(Infinity, 'memory')).toBe('-');
   });
 });

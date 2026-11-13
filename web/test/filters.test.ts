@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import { listFilter } from '../src/api/index';
-import { actionText } from '../src/views/access/model';
+import { pageModule } from './view';
+
+const { actionText } = await pageModule(new URL('../src/views/access/Menus.svelte', import.meta.url));
 
 describe('access searches', () => {
   test('normalizes unselected filters and preserves literal search characters', () => {

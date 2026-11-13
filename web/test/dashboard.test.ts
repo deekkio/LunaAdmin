@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
-import { dateRange, moneyValue } from '../src/views/dashboard/model';
+import { pageModule } from './view';
+const { dateRange, moneyValue } = await pageModule(new URL('../src/views/dashboard/Overview.svelte', import.meta.url));
 
 test('dates include both selected calendar days and preserve local midnight', () => {
   expect(dateRange('', '')).toEqual({ version: 1, start: null, end: null });
@@ -17,9 +18,10 @@ test('date validation rejects partial, reversed and invalid ranges', () => {
 });
 
 test('a daylight saving day ends at the next local midnight', () => {
-  const file = new URL('../src/views/dashboard/model.ts', import.meta.url).pathname;
+  const file = new URL('../src/views/dashboard/Overview.svelte', import.meta.url).href;
+  const helper = new URL('./view.ts', import.meta.url).href;
   const output = Bun.spawnSync(['bun', '-e',
-    `import { dateRange } from ${JSON.stringify(file)}; const range=dateRange('2026-03-08','2026-03-08'); process.stdout.write(String(range.end-range.start));`,
+    `import { pageModule } from ${JSON.stringify(helper)}; const { dateRange } = await pageModule(new URL(${JSON.stringify(file)})); const range=dateRange('2026-03-08','2026-03-08'); process.stdout.write(String(range.end-range.start));`,
   ], { env: { ...process.env, TZ: 'America/New_York' } });
   expect(output.exitCode).toBe(0);
   expect(output.stdout.toString()).toBe('82800');

@@ -32,6 +32,8 @@ export const message = (code: Code | 'network'): string => {
       return '内容冲突，请刷新后重试';
     case 'quota':
       return '配额不足';
+    case 'device_limit':
+      return '设备数量超上限';
     case 'rate_limited':
       return '请求过于频繁，请稍后再试';
     case 'unavailable':

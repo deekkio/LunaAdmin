@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Information from '../../components/Information.svelte';
+  import List from './List.svelte';
 </script>
 
-<Information kind="notices" />
+<List kind="notices" />

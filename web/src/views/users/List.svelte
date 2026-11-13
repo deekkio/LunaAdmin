@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { formatId } from '../../utils/format';
+  import { formatId, formatTraffic, formatTime, stateText } from '../../utils';
   import ListContent from '../../components/ListContent.svelte';
   import { onMount } from 'svelte';
   import { Card, Button, Input, Link, Pagination, Popconfirm, Table, Tag, Space, Row } from '@luna/components';
@@ -8,11 +8,12 @@
   import { RequestTracker } from '../../api/request';
   import { showMessage } from '@luna/components/message';
   import type { UserView } from '../../api/types';
-  import { session } from '../../stores/index.svelte';
+  import { session } from '../../stores/state.svelte';
   import { PAGE_SIZES, Pager } from '../../components/list.svelte';
-  import { formatTraffic, formatTime, stateText } from '../../utils/format';
-  import UserDialog from '../../components/UserDialog.svelte';
-  import OrderHistory from '../../components/OrderHistory.svelte';
+  import UserDetail from './Detail.svelte';
+  import Devices from './Devices.svelte';
+  import Dialog from '../../components/Dialog.svelte';
+  import Orders from '../orders/List.svelte';
 
   let open = $state(false);
   let id = $state('');
@@ -22,6 +23,7 @@
   let account = $state('');
   let username = $state('');
   let ordersOpen = $state(false);
+  let devicesOpen = $state(false);
   let deleting = $state(false);
   let alive = true;
   const tracker = new RequestTracker();
@@ -63,6 +65,13 @@
     ordersOpen = true;
   };
 
+  const showDevices = (row: UserView): void => {
+    if (!session.canRead('user:read')) return;
+    account = row.profile.account;
+    username = row.profile.email;
+    devicesOpen = true;
+  };
+
   const show = (row: UserView | null, action: typeof mode): void => {
     if (action !== 'detail' && !session.canWrite) return;
     id = row?.profile.account ?? '';
@@ -80,6 +89,9 @@
 {#snippet actionsCell(cell: TableCell<UserView>)}
   <Space size={12} wrap={false}>
   <Link type="primary" underline="never" onclick={() => openDetail(cell.row)}>详情</Link>
+  {#if session.canRead('user:read')}
+    <Link type="primary" underline="never" onclick={() => showDevices(cell.row)}>设备</Link>
+  {/if}
   {#if session.canRead('order:read')}
     <Link type="primary" underline="never" onclick={() => related(cell.row)}>订单</Link>
   {/if}
@@ -141,7 +153,10 @@
         {
           key: 'account',
           label: '账户 ID',
-          minWidth: 180,
+          width: 160,
+          className: 'user-account',
+          ellipsis: true,
+          showOverflowTooltip: true,
           formatter: (_: unknown, row: UserView) => formatId(row.profile.account),
         },
         { key: 'state', label: '状态', width: 100, cell: stateCell },
@@ -159,7 +174,7 @@
         {
           key: 'actions', align: 'center', ellipsis: false,
           label: '操作',
-          width: session.canWrite ? 240 : session.canRead('order:read') ? 140 : 80,
+          width: session.canWrite ? 300 : session.canRead('order:read') ? 200 : 140,
           fixed: 'right',
           cell: actionsCell,
         },
@@ -193,6 +208,18 @@
 </Card>
 
 {#if open}
-  <UserDialog bind:open {id} {mode} onsaved={() => void pager.refresh()} />
+  <UserDetail modal bind:open {id} {mode} onsaved={() => void pager.refresh()} />
 {/if}
-{#if ordersOpen}<OrderHistory bind:open={ordersOpen} {account} {username} onsaved={() => void pager.refresh()} />{/if}
+{#if ordersOpen}
+  <Dialog bind:open={ordersOpen} title={`订单 - ${username}`} width={1080}>
+    <Orders {account} onsaved={() => void pager.refresh()} />
+    {#snippet footer()}<Button variant="plain" type="button" onclick={() => (ordersOpen = false)}>关闭</Button>{/snippet}
+  </Dialog>
+{/if}
+{#if devicesOpen}<Devices bind:open={devicesOpen} {account} {username} />{/if}
+
+<style>
+  :global(.ln-table__cell.user-account) {
+    max-width: 160px;
+  }
+</style>

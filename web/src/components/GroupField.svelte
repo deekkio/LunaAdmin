@@ -3,7 +3,7 @@
   import { Select } from '@luna/components';
   import { api } from '../api';
   import type { GroupView } from '../api/types';
-  import { session } from '../stores/index.svelte';
+  import { session } from '../stores/state.svelte';
 
   let { value = $bindable(''), disabled = false, optional = false, ready = false, onchange }: {
     value?: string; disabled?: boolean; optional?: boolean; ready?: boolean; onchange?: () => void;

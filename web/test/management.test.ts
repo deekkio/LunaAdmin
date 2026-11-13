@@ -1,10 +1,12 @@
 import { describe, expect, mock, setSystemTime, test } from 'bun:test';
 mock.module('@luna/components/message', () => ({ showMessage: () => {} }));
 mock.module('@luna/components/toast', () => ({ showToast: () => {} }));
-import { parseAmount, printAmount } from '../src/utils/amounts';
-import { planModel, planValue } from '../src/views/plans/model';
-import { nodeModel, nodeValue } from '../src/views/nodes/model';
+import { parseAmount, printAmount } from '../src/utils';
+import { pageModule } from './view';
 import type { NodeView, Plan } from '../src/api/types';
+
+const { planModel, planValue } = await pageModule(new URL('../src/views/plans/List.svelte', import.meta.url));
+const { nodeModel, nodeValue } = await pageModule(new URL('../src/views/nodes/List.svelte', import.meta.url));
 
 const plan: Plan = {
   id: 'a'.repeat(32),

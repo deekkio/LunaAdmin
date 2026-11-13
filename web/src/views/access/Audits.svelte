@@ -4,17 +4,17 @@
   import ListSearch from '../../components/ListSearch.svelte';
   import type { AccessFilter } from '../../api/types';
   import { RequestTracker } from '../../api/request';
-  import { formatId } from '../../utils/format';
-  import { actionText } from './model';
+  import { formatId, formatTime } from '../../utils';
+  import { actionText } from './Menus.svelte';
   import ListContent from '../../components/ListContent.svelte';
-  import { Card, Button, Dialog, Text, Pagination, Table, Space, Row } from '@luna/components';
+  import { Card, Button, Text, Pagination, Table, Space, Row } from '@luna/components';
+  import Dialog from '../../components/Dialog.svelte';
   import type { TableColumn } from '@luna/components/contracts';
   import { showMessage } from '@luna/components/message';
   import { api, listFilter } from '../../api';
   import type { Audit } from '../../api/types';
-  import { session } from '../../stores/index.svelte';
+  import { session } from '../../stores/state.svelte';
   import { PAGE_SIZES, Pager } from '../../components/list.svelte';
-  import { formatTime } from '../../utils/format';
 
   let query = $state('');
   let filter = $state<AccessFilter>(listFilter());
@@ -116,7 +116,7 @@
   {/snippet}
 </Card>
 
-<Dialog bind:open title="清理日志" width={480} beforeClose={() => !clearing}>
+<Dialog height={320} bind:open title="清理日志" width={480} beforeClose={() => !clearing}>
   <Text tag="p">清理当前搜索匹配的审计日志，此操作无法恢复。</Text>
   <Descriptions columns={1} direction="horizontal" border={false} items={[
     { key: 'query', label: '搜索内容', value: pending.query || '全部' },

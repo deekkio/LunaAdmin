@@ -1,10 +1,11 @@
-import { pagePath } from '../src/router/views';
+import { pagePath, menuId } from './router';
+import { pageModule } from './view';
 import { afterEach, describe, expect, mock, test } from 'bun:test';
 import type { NavRoute, Permission, Role } from '../src/api/types';
 mock.module('@luna/components/message', () => ({ showMessage: () => {} }));
 const { newRole, isRoot, isAdmin, canEdit, fetchPerms, permGroups, mergeGrants } =
-  await import('../src/views/access/roles');
-const rolePath = (routes: readonly NavRoute[]) => pagePath(routes, 'Roles');
+  await pageModule(new URL('../src/views/access/Role.svelte', import.meta.url));
+const rolePath = (routes: readonly NavRoute[]) => pagePath(routes, 'access/Roles');
 const originalFetch = globalThis.fetch;
 afterEach(() => {
   globalThis.fetch = originalFetch;
@@ -19,6 +20,7 @@ const role = (values: Partial<Role> = {}): Role => ({
   ...values,
 });
 const entry = (path: string, view: string | null, children: NavRoute[] = []): NavRoute => ({
+  id: menuId(path), group: false, hidden: false,
   path,
   view,
   children,
@@ -70,10 +72,10 @@ describe('role editing contracts', () => {
     expect(canEdit(null, false)).toBe(true);
   });
   test('returns bookmarked detail dialogs to the registered role list', () => {
-    expect(rolePath([entry('/system', null, [entry('/system/jobs', 'roles-list')])])).toBe(
+    expect(rolePath([entry('/system', null, [entry('/system/jobs', 'access/Roles')])])).toBe(
       '/system/jobs',
     );
-    expect(rolePath([entry('/roles/:id', 'RoleDetail')])).toBe('/denied');
+    expect(rolePath([entry('/roles/:id', 'access/Role')])).toBe('/denied');
   });
 });
 

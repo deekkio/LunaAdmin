@@ -7,7 +7,7 @@
       "dependencies": {
         "@lucide/svelte": "1.37.0",
         "@luna/components": "file:../../APP/LunaUI/packages/components/dist",
-        "@luna/theme-chalk": "./vendor/theme-e4d4229a798d.tgz",
+        "@luna/theme-chalk": "./vendor/theme-fa15e9ac532d.tgz",
         "date-fns": "4.4.0",
         "decimal.js": "10.6.0",
         "echarts": "6.1.0",
@@ -55,7 +55,7 @@
 
     "@luna/components": ["@luna/components@file:../../APP/LunaUI/packages/components/dist", { "dependencies": { "@lucide/icons": "1.37.0", "@lucide/svelte": "1.37.0" }, "peerDependencies": { "@mini-program/cli": ">=0.1.0", "svelte": "^5.0.0" }, "optionalPeers": ["@mini-program/cli"] }],
 
-    "@luna/theme-chalk": ["@luna/theme-chalk@./vendor/theme-e4d4229a798d.tgz", {}, "sha512-GKNXpPY1hV4xxHvSvbIfrqeoSuUTCJkYw1ngJcrBKSWdAotAXd9nkFhpJZ0YuRQV93SUY4HDLa4MX+k7UPw5yw=="],
+    "@luna/theme-chalk": ["@luna/theme-chalk@./vendor/theme-fa15e9ac532d.tgz", {}, "sha512-67zT4A5jI2BT0E/hPV3fti0Nf78DCZfm17cxDule/TnAVE49UnwxV9bTjbHBLuEJ3Uk9aNIhFRT2EZOEZ2Io9Q=="],
 
     "@oxc-project/types": ["@oxc-project/types@0.156.0", "", {}, "sha512-1Duyg48TdJNdyhEB8Xn1L36bT9Pv6GUtlKjHxOys8xkaF/rQq3XJE+bAurSK/AgIz5mGFsb77cn9Pb20+WCScw=="],
 

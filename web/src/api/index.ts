@@ -53,6 +53,7 @@ import type {
   Tutorial,
   TutorialInput,
   UserView,
+  UserDevice,
   LinkRef,
   UserInput,
   DeleteInput,
@@ -105,6 +106,10 @@ export const api = {
     call<List<Order>>('POST', '/v1/orders/query', { token, body: { version: 1, query, account, state, offset, limit } }),
 
   user: (token: string, id: string) => call<UserView>('GET', `/v1/users/${id}`, { token }),
+  devices: (token: string, id: string, offset: number, limit: number, signal: AbortSignal) =>
+    call<List<UserDevice>>('GET', `/v1/users/${id}/devices`, { token, query: { offset, limit }, signal, quiet: true }),
+  deleteDevice: (token: string, id: string, input: DeleteInput & { device: string }) =>
+    call<null>('DELETE', `/v1/users/${id}/devices`, { token, body: input, quiet: true }),
   createUser: (token: string, input: UserInput) =>
     call<UserView>('POST', '/v1/users', { token, body: input }),
   deleteUser: (token: string, id: string, input: DeleteInput) =>

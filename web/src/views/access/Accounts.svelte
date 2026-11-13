@@ -2,18 +2,17 @@
   import ListSearch from '../../components/ListSearch.svelte';
   import type { AccessFilter } from '../../api/types';
   import IdentityTag from '../../components/IdentityTag.svelte';
-  import { formatId } from '../../utils/format';
+  import { formatId, formatTime, stateText } from '../../utils';
   import ListContent from '../../components/ListContent.svelte';
   import { onDestroy, untrack } from 'svelte';
   import { Card, Button, Link, Pagination, Table, Tag, Space, Row } from '@luna/components';
   import type { TableCell, TableColumn } from '@luna/components/contracts';
   import { api, listFilter } from '../../api';
   import type { Account, Role } from '../../api/types';
-  import { session } from '../../stores/index.svelte';
+  import { session } from '../../stores/state.svelte';
   import { PAGE_SIZES, Pager } from '../../components/list.svelte';
-  import { formatTime, stateText } from '../../utils/format';
-  import { fetchRoles, roleNames, type AccountMode } from './accounts';
-  import AccountDialog from '../../components/AccountDialog.svelte';
+  import { fetchRoles, roleNames, type AccountMode } from './Account.svelte';
+  import AccountView from './Account.svelte';
 
   let query = $state('');
   let status = $state('');
@@ -163,5 +162,5 @@
 </Card>
 
 {#if open}
-  <AccountDialog bind:open bind:mode {id} {roles} onsaved={() => void pager.refresh()} />
+  <AccountView modal bind:open bind:mode {id} {roles} onsaved={() => void pager.refresh()} />
 {/if}

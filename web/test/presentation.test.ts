@@ -1,10 +1,14 @@
 import { describe, expect, test } from 'bun:test';
-import { formatId } from '../src/utils/format';
-import { actionText, menuChoices, menuPath, viewLabel } from '../src/views/access/model';
+import { formatId } from '../src/utils';
+import { pageModule } from './view';
+import { menuId } from './router';
 import type { NavMenu } from '../src/api/types';
 
+const { actionText, menuChoices, menuPath, viewLabel } = await pageModule(new URL('../src/views/access/Menus.svelte', import.meta.url));
+
 const menu = (id: string, children: NavMenu[] = []): NavMenu => ({
-  id, parent_id: null, code: id, title: id, path: '/'+id, view: null,
+  group: false, hidden: false,
+  id: menuId(id), parent_id: null, code: id, title: id, path: '/'+id, view: null,
   icon: null, rank: 0, enabled: true, perm: null, children,
 });
 
@@ -23,16 +27,16 @@ describe('management presentation', () => {
     expect(actionText('user:reset_password')).toBe('重置用户密码');
     expect(actionText('access:change_account')).toBe('更新管理员');
     expect(actionText('unknown:action')).toBe('其他操作');
-    expect(viewLabel('Accounts')).toBe('管理列表');
+    expect(viewLabel('access/Accounts')).toBe('access/Accounts');
     expect(viewLabel(null)).toBe('目录');
   });
   test('preserves parent paths and excludes self and descendants', () => {
     const items = [menu('root', [menu('branch', [menu('leaf')]), menu('other')])];
-    expect(menuPath(items, 'leaf')).toEqual(['root', 'branch', 'leaf']);
-    expect(menuPath(items, 'missing')).toEqual([]);
-    const options = menuChoices(items, 'branch');
-    expect(options[0].children?.map(item => item.value)).toEqual(['other']);
-    expect(menuChoices(items, 'root')).toEqual([]);
-    expect(items[0].children[0].children[0].id).toBe('leaf');
+    expect(menuPath(items, menuId('leaf'))).toEqual(['root', 'branch', 'leaf'].map(menuId));
+    expect(menuPath(items, menuId('missing'))).toEqual([]);
+    const options = menuChoices(items, menuId('branch'));
+    expect(options[0].children?.map(item => item.value)).toEqual(['other'].map(menuId));
+    expect(menuChoices(items, menuId('root'))).toEqual([]);
+    expect(items[0].children[0].children[0].id).toBe(menuId('leaf'));
   });
 });

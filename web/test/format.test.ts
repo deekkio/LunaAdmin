@@ -1,35 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  formatBytes,
   formatId,
   formatMoney,
   formatTime,
   parseTime,
   stateText,
   timeInput,
-} from '../src/utils/format';
-
-describe('formatBytes', () => {
-  test('renders byte units', () => {
-    expect(formatBytes(0)).toBe('0 B');
-    expect(formatBytes(1023)).toBe('1023 B');
-    expect(formatBytes(1024)).toBe('1.00 KiB');
-    expect(formatBytes(1536)).toBe('1.50 KiB');
-    expect(formatBytes(1024 * 1024 * 5)).toBe('5.00 MiB');
-    expect(formatBytes(10 * 1024)).toBe('10.0 KiB');
-    expect(formatBytes(100 * 1024)).toBe('100 KiB');
-    expect(formatBytes(1024 ** 2 - 1)).toBe('1024 KiB');
-    expect(formatBytes(1024 ** 6)).toBe('1024 PiB');
-  });
-
-  test('renders missing values', () => {
-    expect(formatBytes(null)).toBe('-');
-    expect(formatBytes(undefined)).toBe('-');
-    expect(formatBytes(-1)).toBe('-');
-    expect(formatBytes(NaN)).toBe('-');
-    expect(formatBytes(Infinity)).toBe('-');
-  });
-});
+} from '../src/utils';
 
 describe('formatMoney', () => {
   test('formats minor units', () => {

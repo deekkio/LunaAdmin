@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test';
-import { readLinks } from '../src/views/users/model';
+import { pageModule } from './view';
 import type { LinkKind, LinkRef } from '../src/api/types';
+
+const { readLinks } = await pageModule(new URL('../src/views/users/Detail.svelte', import.meta.url));
 
 mock.module('@luna/components/message', () => ({ showMessage: () => {} }));
 

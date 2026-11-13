@@ -5,7 +5,7 @@
   import Lock from '@lucide/svelte/icons/lock';
   import logo from '../../assets/luna.svg';
   import { api } from '../../api';
-  import { session, navigation } from '../../stores/index.svelte';
+  import { session, navigation } from '../../stores/state.svelte';
   import { useRouter } from 'luna-router';
 
   const router = useRouter();

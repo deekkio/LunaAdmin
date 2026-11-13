@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { command, control, ingress, settings } from '../src/views/nodes/model';
+import { pageModule } from './view';
+
+const { command, control, ingress, settings } = await pageModule(new URL('../src/views/nodes/EnrollDialog.svelte', import.meta.url));
 
 const input = { control: 'https://example.com:19447', origin: 'https://example.com', name: 'Tokyo' };
 

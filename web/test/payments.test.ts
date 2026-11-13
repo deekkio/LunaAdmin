@@ -1,10 +1,11 @@
 import { expect, test } from 'bun:test';
-import { paymentModel, paymentValue, paymentRules } from '../src/views/payments/model';
+import { pageModule } from './view';
+const { paymentModel, paymentValue, paymentRules } = await pageModule(new URL('../src/views/payments/List.svelte', import.meta.url));
 import type { PaymentConfig } from '../src/api/types';
-import { viewPaths } from '../src/router/views';
+import { hasView } from './router';
 
 test('payment views and secret-preserving edits', () => {
-  expect(viewPaths.payments).toBe('../views/payments/List.svelte');
+  expect(hasView('payments/List')).toBe(true);
   const config: PaymentConfig = {
     id: 'a'.repeat(32), revision: 2, name: '支付宝', provider: 'alipay',
     app_id: '2026102500000001', merchant_id: '2088000000000001', serial: null, public_id: null,

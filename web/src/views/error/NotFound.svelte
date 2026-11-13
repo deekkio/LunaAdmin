@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button, Result } from '@luna/components';
   import { useRoute, useRouter } from 'luna-router';
-  import { navigation } from '../../stores/index.svelte';
+  import { navigation } from '../../stores/state.svelte';
 
   const route = useRoute();
   const router = useRouter();

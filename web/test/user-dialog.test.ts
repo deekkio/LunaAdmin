@@ -14,26 +14,27 @@ const defer = <Value>() => {
 
 const flush = async () => { await Promise.resolve(); await Promise.resolve(); };
 
-const makeDialog = () => {
-  const source = readFileSync(new URL('../src/components/UserDialog.svelte', import.meta.url), 'utf8');
+const makeDialog = (modal = true, routeId = '') => {
+  const source = readFileSync(new URL('../src/views/users/Detail.svelte', import.meta.url), 'utf8');
   const script = source.match(/<script lang="ts">([\s\S]*?)<\/script>/)![1]!
     .replace(/^\s*import[\s\S]*?;\s*$/gm, '');
   const transpiler = new Bun.Transpiler({ loader: 'ts' });
   const effects: Effect[] = [];
   const cleanups: Array<undefined | (() => void)> = [];
   const writes: string[] = [];
+  const routes: string[] = [];
   const reads: Array<{ token: string; account: string; kind: Kind; signal: AbortSignal }> = [];
   const mints: string[] = [];
   const changes: Array<{ token: string; account: string; input: { version: number; group: string } }> = [];
-  const session = { token: 'fixture-session-a', canWrite: true, canRead: () => true };
+  const session = { token: 'fixture-session-a', authenticated: true, canWrite: true, canRead: () => true };
   const sources: Record<Kind, Item[]> = {
     subscription: [{ id: 'fixture-sub', url: 'subscribe://fixture/subscription' }],
     dedicated: [{ id: 'fixture-first', url: 'luna://fixture/first' }, { id: 'fixture-second', url: 'luna://fixture/second' }],
   };
   let read = async (_token: string, _account: string, kind: Kind, _signal: AbortSignal): Promise<Item[]> => structuredClone(sources[kind]);
   let mint = async (_token: string, id: string): Promise<Reply> => ({ code: 0, data: { url: `luna://fixture/${id}` } });
-  const create = new Function('api', 'session', 'navigator', 'RequestTracker', 'readLinks', 'showMessage', 'showToast', 'onDestroy', 'untrack', '$state', '$derived', '$effect', '$props', transpiler.transformSync(script) + `
-    return { copyLink, saveGroup, setGroup(value) { model.group = value; }, get user() { return user; }, setOpen(value) { open = value; }, setId(value) { id = value; }, get links() { return links; } };
+  const create = new Function('api', 'session', 'navigator', 'RequestTracker', 'readLinks', 'showMessage', 'showToast', 'onDestroy', 'untrack', '$state', '$derived', '$effect', '$props', 'useRoute', 'useRouter', 'pagePath', 'navigation', transpiler.transformSync(script) + `
+    return { copyLink, saveGroup, close, setGroup(value) { model.group = value; }, get user() { return user; }, setOpen(value) { open = value; }, setId(value) { id = value; }, get links() { return links; } };
   `);
   const dialog = create(
     {
@@ -54,7 +55,10 @@ const makeDialog = () => {
     () => {}, () => {}, () => {}, (callback: () => void) => callback(),
     (value: unknown) => value, (value: unknown) => value,
     (callback: Effect) => effects.push(callback),
-    () => ({ open: false, id: 'fixture-account-a', mode: 'detail' }),
+    () => ({ modal, open: false, id: routeId ? undefined : 'fixture-account-a', mode: 'detail' }),
+    () => ({ params: { id: routeId } }),
+    () => ({ replace: async (path: string) => { routes.push(path); } }),
+    () => '/users', { menu: [] },
   );
   const run = (index: number) => {
     cleanups[index]?.();
@@ -62,7 +66,7 @@ const makeDialog = () => {
     cleanups[index] = typeof result === 'function' ? result : undefined;
   };
   return {
-    dialog, session, sources, writes, reads, mints, changes,
+    dialog, session, sources, writes, reads, mints, changes, routes,
     async open(value = true) {
       dialog.setOpen(value);
       run(0);
@@ -180,4 +184,15 @@ test('saves only the selected node group without changing account state or passw
     input: { version: 1, group: '01K00000000000000000000001' } }]);
   expect(fixture.dialog.user.group.name).toBe('分组1');
   expect(fixture.mints).toEqual([]);
+});
+
+test('uses the route account and returns after closing only in page mode', async () => {
+  const page = makeDialog(false, 'fixture-account-route');
+  await page.open();
+  expect(page.dialog.user.profile.account).toBe('fixture-account-route');
+  page.dialog.close();
+  expect(page.routes).toEqual(['/users']);
+  const modal = makeDialog();
+  modal.dialog.close();
+  expect(modal.routes).toEqual([]);
 });

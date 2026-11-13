@@ -27,12 +27,11 @@
   import Monitor from '@lucide/svelte/icons/monitor';
   import Languages from '@lucide/svelte/icons/languages';
   import { api } from '../api';
-  import { session, navigation, preferences } from '../stores/index.svelte';
-  import { router } from '../router';
-  import { pageTrail } from '../router/routes';
+  import { session, navigation, preferences, readUser, saveUser } from '../stores/state.svelte';
+  import { router, pageTrail } from '../router/router';
   import { useRoute } from 'luna-router';
   import { menuIcon } from '../components/ReIcon';
-  import { menuOpen } from '@luna/components/menu';
+  import { menuFind, menuOpen } from '@luna/components/menu';
   import type { NavRoute } from '../api/types';
   import logo from '../assets/luna.svg?no-inline';
 
@@ -44,25 +43,43 @@
 
   let { children }: Props = $props();
 
-  const copy = $derived(preferences.text);
-  const menuItems = (routes: readonly NavRoute[]): MenuItem[] => {
-    return routes.map((route) => ({
-      key: route.path,
-      label: route.title,
-      iconComponent: menuIcon(route.icon, route.children.length > 0),
-      children: route.children.length ? menuItems(route.children) : undefined,
-    }));
+  const copy = $derived(preferences.locale.app);
+  const menuPaths = (routes: readonly NavRoute[], trail: readonly NavRoute[] = []): Map<string, string> => {
+    const paths = new Map<string, string>();
+    const current = new Map(trail.map(item => [String(item.id), item.path]));
+    const walk = (items: readonly NavRoute[]): void => {
+      for (const item of items) {
+        if (!item.group) paths.set(String(item.id), current.get(String(item.id)) ?? item.path);
+        walk(item.children);
+      }
+    };
+    walk(routes);
+    return paths;
   };
-  const items = $derived(menuItems(navigation.menu));
-  const active = $derived(route.path);
-  const trail = $derived(pageTrail(navigation.menu, active));
+  const menuItems = (routes: readonly NavRoute[], paths: ReadonlyMap<string, string> = new Map()): MenuItem[] =>
+    routes.flatMap(item => {
+      const children = menuItems(item.children, paths);
+      if (item.group) return children.map((child, index) => index === 0 ? { ...child, group: item.title } : child);
+      if (!item.view && !children.length) return [];
+      return [{
+        key: String(item.id), label: item.title,
+        iconComponent: menuIcon(item.icon, children.length > 0),
+        children: children.length ? children : undefined,
+        ...((paths.get(String(item.id)) ?? item.path).includes(':') ? { disabled: true } : {}),
+      }];
+    });
+  const trail = $derived(pageTrail(router, route));
+  const paths = $derived(menuPaths(navigation.menu, trail));
+  const items = $derived(menuItems(navigation.menu, paths));
+  const active = $derived(String([...trail].reverse().find(item => paths.has(String(item.id)))?.id ?? ''));
   const crumbs = $derived(trail.map((entry, index) => ({
     label: entry.title,
-    href: index < trail.length - 1 ? `#${entry.path}` : undefined,
+    href: !entry.group && !entry.path.includes(':') && index < trail.length - 1 ? `#${entry.path}` : undefined,
     current: index === trail.length - 1,
   })));
   let openKeys = $state<string[]>([]);
   let popups = $state<string[]>([]);
+  let menuMode = untrack(() => preferences.collapsed);
   let storage = '';
 
   const menuKeys = (
@@ -70,40 +87,26 @@
     path: string,
     saved: readonly string[] = [],
   ): string[] => {
+    const selected = menuFind(items, path)?.path.map(item => item.key) ?? [];
+    const expanded = new Set([...saved, ...selected]);
     const branches: string[] = [];
-    let selected: string[] = [];
-    let length = -1;
-    const walk = (nodes: readonly MenuItem[], parents: string[]): void => {
+    const walk = (nodes: readonly MenuItem[]): void => {
       for (const item of nodes) {
-        if (item.disabled) continue;
-        const branch = Boolean(item.children?.length);
-        const chain = branch ? [...parents, item.key] : parents;
-        if (path === item.key) {
-          selected = chain;
-          length = Infinity;
-        } else if (item.key !== '/' && path.startsWith(`${item.key}/`) && item.key.length > length) {
-          selected = chain;
-          length = item.key.length;
-        }
-        if (branch) {
-          branches.push(item.key);
-          walk(item.children!, chain);
+        if (item.children?.length) {
+          if (expanded.has(item.key)) branches.push(item.key);
+          walk(item.children);
         }
       }
     };
-    walk(items, []);
-    const expanded = new Set([...saved, ...selected]);
-    return menuOpen(items, branches.filter((key) => expanded.has(key)));
+    walk(items);
+    return menuOpen(items, branches);
   };
 
   const readMenu = (account: string): string[] => {
-    try {
-      const value: unknown = JSON.parse(sessionStorage.getItem('m') ?? 'null');
-      if (!value || typeof value !== 'object' || !('account' in value) || value.account !== account || !('keys' in value) || !Array.isArray(value.keys)) return [];
-      return value.keys.filter((item): item is string => typeof item === 'string');
-    } catch {
-      return [];
-    }
+    const stored = readUser();
+    const value = stored?.token === session.token ? stored.sidebar : undefined;
+    if (!value || value.account !== account || !Array.isArray(value.keys)) return [];
+    return value.keys.filter((item): item is string => typeof item === 'string');
   };
 
   $effect(() => {
@@ -111,28 +114,31 @@
     const loaded = navigation.loaded;
     const nodes = items;
     const path = active;
-    if (!loaded || !account) return;
+    const collapsed = preferences.collapsed;
+    if (!loaded || !account) {
+      untrack(() => { storage = ''; openKeys = []; popups = []; menuMode = collapsed; });
+      return;
+    }
     untrack(() => {
       const saved = storage === account ? openKeys : readMenu(account);
       storage = account;
       openKeys = menuKeys(nodes, path, saved);
       popups = [];
+      menuMode = collapsed;
     });
   });
 
   $effect(() => {
     const keys = openKeys;
     if (!storage) return;
-    try {
-      sessionStorage.setItem('m', JSON.stringify({ account: storage, keys }));
-    } catch {
-      // 浏览器禁用存储时仍保留本次页面内的展开状态。
-    }
+    saveUser({ sidebar: { account: storage, keys } });
   });
 
   // 折叠菜单的临时浮层状态不覆盖展开模式下保存的目录。
   const getOpen = (): string[] => (preferences.collapsed ? popups : openKeys);
   const setOpen = (keys: string[]): void => {
+    // Menu 清理布局浮层时，不覆盖持久目录状态。
+    if (menuMode !== preferences.collapsed) return;
     if (preferences.collapsed) popups = keys;
     else openKeys = keys;
   };
@@ -182,7 +188,8 @@
   ]);
 
   const onselect = (key: string): void => {
-    if (key !== active) void router.push(key);
+    const path = paths.get(key);
+    if (path && !path.includes(':') && path !== route.path) void router.push(path);
   };
 
   const oncommand = async (value: string): Promise<void> => {
@@ -220,19 +227,21 @@
     width="auto"
     style="background: var(--ln-bg-1, #fff); overflow: {preferences.collapsed ? 'visible' : 'auto'};"
   >
-    <Menu
-      {items}
-      value={active}
-      bind:openKeys={getOpen, setOpen}
-      collapsed={preferences.collapsed}
-      width={220}
-      collapsedWidth={64}
-      bordered={false}
-      {onselect}
-      header={brand}
-      ariaLabel={copy.navigation}
-      style="min-height: 100%; border-right: 1px solid var(--ln-border-1, #e4e7ed);"
-    />
+    {#key navigation.routes}
+      <Menu
+        {items}
+        value={active}
+        bind:openKeys={getOpen, setOpen}
+        collapsed={preferences.collapsed}
+        width={220}
+        collapsedWidth={64}
+        bordered={false}
+        {onselect}
+        header={brand}
+        ariaLabel={copy.navigation}
+        style="min-height: 100%; border-right: 1px solid var(--ln-border-1, #e4e7ed);"
+      />
+    {/key}
   </Aside>
   <Container direction="vertical" style="min-height: 0;">
     <Header

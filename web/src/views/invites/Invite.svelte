@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { addDays, format } from 'date-fns';
   import type { FormModel } from '../../api/types';
   import { DatePicker } from '@luna/components';
   import {
@@ -16,13 +17,12 @@
   import { api } from '../../api';
   import { RequestTracker } from '../../api/request';
   import type { Invite } from '../../api/types';
-  import { session } from '../../stores/index.svelte';
-  import { formatTime, parseTime, futureInput } from '../../utils/format';
-  import { intIn, futureRule } from '../../utils/rules';
+  import { session } from '../../stores/state.svelte';
+  import { formatTime, parseTime, intIn, futureRule } from '../../utils';
 
   const tracker = new RequestTracker();
 
-  let model = $state({ uses: '1', expiresAt: futureInput(7) });
+  let model = $state({ uses: '1', expiresAt: format(addDays(new Date(), 7), "yyyy-MM-dd'T'HH:mm:ss") });
   let generating = $state(false);
   let result = $state<Invite | null>(null);
 

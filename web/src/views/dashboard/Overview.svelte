@@ -1,10 +1,41 @@
+<script module lang="ts">
+  import { addDays, format, getUnixTime, isValid, parse } from 'date-fns';
+  import type { DashboardQuery } from '../../api/types';
+
+  const localDate = (value: string): Date => {
+    const date = parse(value, 'yyyy-MM-dd', 0);
+    if (!isValid(date) || format(date, 'yyyy-MM-dd') !== value || value < '1970-01-01') {
+      throw new Error('请选择有效日期');
+    }
+    return date;
+  };
+
+  /** Inclusive local calendar dates become an explicit [start, end) UTC instant range. */
+  export const dateRange = (start: string, end: string): DashboardQuery => {
+    if (!start && !end) return { version: 1, start: null, end: null };
+    if (!start || !end) throw new Error('请选择开始日期和结束日期');
+    const first = localDate(start);
+    const last = localDate(end);
+    if (first > last) throw new Error('开始日期不能晚于结束日期');
+    const lower = getUnixTime(first);
+    const upper = getUnixTime(addDays(last, 1));
+    if (lower < 0 || upper > 253402300800) throw new Error('日期超出支持范围');
+    return { version: 1, start: lower, end: upper };
+  };
+
+  export const moneyValue = (minor: string): string => {
+    if (!/^\d+$/.test(minor)) return '';
+    const value = BigInt(minor);
+    return `${value / 100n}.${String(value % 100n).padStart(2, '0')}`;
+  };
+</script>
+
 <script lang="ts">
   import { untrack } from 'svelte';
   import { Alert, Button, Card, Col, DatePicker, Empty, Row, Skeleton, Space, Statistic, Text } from '@luna/components';
   import { api } from '../../api';
   import type { Dashboard } from '../../api/types';
-  import { session } from '../../stores/index.svelte';
-  import { dateRange, moneyValue } from './model';
+  import { session } from '../../stores/state.svelte';
 
   let range = $state<string[] | null>(null);
   let values = $state<Dashboard | null>(null);
@@ -72,8 +103,11 @@
   {:else}
   <Row gutter={16}>
     {#each shown as item (item.key)}
+      {@const fill = item.tone === 'primary' ? 'var(--ln-tag-fill, var(--ln-primary-l9))' : `var(--ln-${item.tone}-l9)`}
+      {@const line = item.tone === 'primary' ? 'var(--ln-tag-line, var(--ln-primary-l8))' : `var(--ln-${item.tone}-l8)`}
+      {@const ink = item.tone === 'primary' ? 'var(--ln-tag-ink, var(--ln-primary))' : `var(--ln-${item.tone})`}
       <Col xs={24} sm={12} md={6}>
-        <Card tone={item.tone} aria-label={item.label}>
+        <Card tone={item.tone} aria-label={item.label} style={`--ln-card-bg: ${fill}; --ln-statistic-color: ${ink}; --ln-text-2: ${ink}; border-color: ${line};`}>
           <Skeleton loading={loading || values?.[item.key] == null} keepLayout rows={1} animated={false} ariaLabel={`${item.label}加载中`}>
           {#if item.key === 'recharge'}
             {#if values?.recharge?.length}

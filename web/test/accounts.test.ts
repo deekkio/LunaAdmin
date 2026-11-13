@@ -1,16 +1,18 @@
-import { pagePath } from '../src/router/views';
+import { pagePath, menuId } from './router';
+import { pageModule } from './view';
 import { afterEach, describe, expect, mock, test } from 'bun:test';
 import type { NavRoute, Role } from '../src/api/types';
 
 mock.module('@luna/components/message', () => ({ showMessage: () => {} }));
-const { fetchRoles, roleNames } = await import('../src/views/access/accounts');
-const accountPath = (routes: readonly NavRoute[]) => pagePath(routes, 'Accounts');
+const { fetchRoles, roleNames } = await pageModule(new URL('../src/views/access/Account.svelte', import.meta.url));
+const accountPath = (routes: readonly NavRoute[]) => pagePath(routes, 'access/Accounts');
 const originalFetch = globalThis.fetch;
 afterEach(() => {
   globalThis.fetch = originalFetch;
 });
 
 const entry = (path: string, view: string | null, children: NavRoute[] = []): NavRoute => ({
+  id: menuId(path), group: false, hidden: false,
   path,
   view,
   children,
@@ -39,14 +41,14 @@ describe('administrator presentation', () => {
   });
 
   test('returns legacy dialogs to the registered account list, preserving the first match', () => {
-    expect(accountPath([entry('/system', null, [entry('/system/staff', 'admins')])])).toBe(
+    expect(accountPath([entry('/system', null, [entry('/system/staff', 'access/Accounts')])])).toBe(
       '/system/staff',
     );
-    expect(accountPath([entry('/accounts/:id', 'AccountDetail')])).toBe('/denied');
+    expect(accountPath([entry('/accounts/:id', 'access/Account')])).toBe('/denied');
     expect(
       accountPath([
-        entry('/root', null, [entry('/accounts', 'Accounts')]),
-        entry('/later', 'Accounts'),
+        entry('/root', null, [entry('/accounts', 'access/Accounts')]),
+        entry('/later', 'access/Accounts'),
       ]),
     ).toBe('/accounts');
   });
